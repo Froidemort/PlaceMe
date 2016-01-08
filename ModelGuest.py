@@ -6,13 +6,14 @@ from StackBar import StackBar
 # CONSTANTES (toutes precedees avec 'C_') --------------------------------------
 C_MAN, C_WOMAN, C_CHILDREN = tuple(range(3))
 # FONCTIONS --------------------------------------------------------------------
-##        text = u"""Vas-tu répondre non à cette question ?"""
-##        b = QtGui.QMessageBox.question(self.parent, 'Coucou !', text,
-##        QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-##        if b == QtGui.QMessageBox.No:
-##            sys.exit(0)
-##        elif b == QtGui.QMessageBox.Yes:
-##            print u'démarrage du programme'
+def skip_duplicates(iterable, key=lambda x: x):
+    fingerprints = set()
+    for x in iterable:
+        fingerprint = key(x)
+        if fingerprint not in fingerprints:
+            yield x
+            fingerprints.add(fingerprint)
+
 # CLASSES ----------------------------------------------------------------------
 class GuestsModel(QtCore.QAbstractTableModel):
     def __init__(self, parent=None):
@@ -51,6 +52,13 @@ class GuestsModel(QtCore.QAbstractTableModel):
             if index.column() != 3:
                 oldValue = self.guestList[index.row()][index.column()]
                 self.guestList[index.row()][index.column()]=value
+                if not self._checkDatas():
+                    QtGui.QMessageBox.warning(self, 'Error : two identical guests',
+                                              'Two guest cannot be identical')
+                    self.guestList[index.row()][index.column()]=oldValue
+                else:
+                    return True
+
             else:
                 #ignore tags for the moment, will be implemented later
                 self.guestList[index.row()][index.column()]=None
@@ -70,7 +78,6 @@ class GuestsModel(QtCore.QAbstractTableModel):
         self.endInsertRows()
 
     def removeRows(self, row, count, parent=QtCore.QModelIndex()):
-        #Need to implement the function in case of multiple selection.
         print 'deleting row n', row
         self.beginRemoveRows(parent, row, row + count - 1)
         if len(self.guestList)!=0: self.guestList.pop(row)
@@ -82,8 +89,18 @@ class GuestsModel(QtCore.QAbstractTableModel):
             return self.headerLabels[section]
         return QtCore.QAbstractTableModel.headerData(self, section,
                                                          orientation, role)
-    def _checkDatas(self, index, value):
-        self.guestList[index.row()]
+    def _checkDatas(self):
+        partialGuestList = [elem[:-1] for elem in self.guestList[:] 
+                if elem not in [[None, None, i, None] for i in range(3)]]
+        partialGuestList = [tuple(x) for x in partialGuestList]
+        skippedGuestList = list(skip_duplicates(partialGuestList, lambda x: tuple(x)))
+        print partialGuestList
+        print skippedGuestList
+        if len(partialGuestList)!=len(skippedGuestList):
+            return False
+        else:
+            return True
+            
 
 class ComboDelegate(QtGui.QItemDelegate):
     def __init__(self, parent):
@@ -161,8 +178,10 @@ class Widget(QtGui.QWidget):
         def delGuest(self):
             print "Deleting a list of selected rows"
             selection = self.view.selectionModel()
-            for index in reversed(selection.selectedIndexes()):
-                self.model.removeRows(index.row(),1)
+            l =  reversed(list(skip_duplicates([item.row()
+                                for item in selection.selectedIndexes()])))
+            for row in l:
+                self.model.removeRows(row,1)
 
 # MAIN -------------------------------------------------------------------------
 def main():

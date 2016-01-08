@@ -44,6 +44,7 @@ class StackBar(QtGui.QWidget):
         else:
             txt = ''#on ne met que l'icone.
         self.btnList.append(QtGui.QPushButton(txt,  self))
+        self.fctList.append(lambda x: None)
         self.actList.append(QtGui.QAction(QtGui.QIcon(icon),text, self.menu))
         self.btnList[self.currentItem].move(self.currentx, self.hBorder)
         self.btnList[self.currentItem].setIcon(QtGui.QIcon(icon))
@@ -85,9 +86,12 @@ class StackBar(QtGui.QWidget):
         self.groupBtn.setFixedHeight(height)
         
     def setFunction(self, i, function):
-        self.fctList[i] = function
-        self.btnList[i].clicked.connect(self.listFct[i])
-        self.actList[i].triggered.connect(self.listFct[i])
+        if len(self.fctList) <i:
+            self.fctList.append(function)
+        else:
+            self.fctList[i] = function
+        self.btnList[i].clicked.connect(self.fctList[i])
+        self.actList[i].triggered.connect(self.fctList[i])
 
 
 class MainWindow(QtGui.QWidget):
@@ -117,4 +121,5 @@ def main():
 
 # MAIN--------------------------------------------------------------------------
 if __name__ == '__main__':
+    print type(main)
     main()
