@@ -1,3 +1,4 @@
+# coding=utf-8
 # IMPORT MODULES ---------------------------------------------------------------
 from PyQt4 import QtGui, QtCore
 import sys, os
