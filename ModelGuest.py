@@ -1,11 +1,14 @@
 # coding=utf-8
 # IMPORT MODULES ---------------------------------------------------------------
+import sys
+
 from PyQt4 import QtGui, QtCore
-import sys, os
+
 from StackBar import StackBar
-# CONSTANTES (toutes precedees avec 'C_') --------------------------------------
+
+# CONSTANTS (preceded with 'C_') --------------------------------------
 C_MAN, C_WOMAN, C_CHILDREN = tuple(range(3))
-# FONCTIONS --------------------------------------------------------------------
+# FUNCTIONS --------------------------------------------------------------------
 def skip_duplicates(iterable, key=lambda x: x):
     fingerprints = set()
     for x in iterable:

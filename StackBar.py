@@ -1,12 +1,14 @@
 # coding=utf-8
 # IMPORTS ----------------------------------------------------------------------
-from PyQt4 import QtGui, QtCore
-from collections import OrderedDict
-import sys, os, random
-from functools import partial
-# CONSTANTES (toutes precedees avec 'C_') --------------------------------------
+import random
+import sys
 
-# FONCTIONS --------------------------------------------------------------------
+from PyQt4 import QtGui
+
+
+# CONSTANTS (preceded with 'C_') -----------------------------------------------
+
+# FUNCTIONS --------------------------------------------------------------------
 def showMessage(self, parent, title, text):
     QtGui.QMessageBox.information(parent, title, text)
 # CLASSES ----------------------------------------------------------------------
