@@ -62,7 +62,7 @@ class StackBar(QtGui.QWidget):
         self.currentx += width
 
     def resizeEvent(self, e):
-        if self.parent == None:
+        if self.parent is None:
             S = self.size().width()
         else:
             S = self.parent.size().width()

@@ -5,7 +5,7 @@ import sys
 from PyQt4 import QtGui, QtCore
 
 from StackBar import StackBar
-
+from UITagList import TagWindow
 # CONSTANTS (preceded with 'C_') --------------------------------------
 C_MAN, C_WOMAN, C_CHILDREN = tuple(range(3))
 
@@ -18,11 +18,14 @@ def skip_duplicates(iterable, key=lambda x: x):
         if fingerprint not in fingerprints:
             yield x
             fingerprints.add(fingerprint)
+
+
 def _toPyObject(elem):
     try:
         return elem.toPyObject()
     except AttributeError:
         return elem
+
 
 # CLASSES ----------------------------------------------------------------------
 class GuestsModel(QtCore.QAbstractTableModel):
@@ -32,7 +35,7 @@ class GuestsModel(QtCore.QAbstractTableModel):
         self.guestList = []
         self.headerLabels = ['Name', 'Surname', 'Gender', 'Tags...']
         # In english for the moment,
-        # need to implement QtLinguist functionnalities
+        # need to implement QtLinguist functionality
 
     def columnCount(self, parent=QtCore.QModelIndex()):
         # Fixed to 4 (surname, name, gender, tags)
@@ -56,7 +59,7 @@ class GuestsModel(QtCore.QAbstractTableModel):
                 return None
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
-        print "Appel de la fonction setData"
+        print "Calling setData"
         if not index.isValid(): return False
         if role == QtCore.Qt.EditRole:
             if index.column() != 3:
@@ -102,21 +105,22 @@ class GuestsModel(QtCore.QAbstractTableModel):
 
     def _checkDatas(self):
         partialGuestList = [elem[:-1] for elem in self.guestList[:]
-                if elem not in [[None, None, i, None] for i in range(3)]]
+                            if elem not in [[None, None, i, None] for i in range(3)]]
         partialGuestList = [tuple([_toPyObject(elem)
                                    for elem in x])
-                                   for x in partialGuestList]
+                            for x in partialGuestList]
         skippedGuestList = list(skip_duplicates(partialGuestList,
-                                lambda x: tuple([_toPyObject(elem)
-                                for elem in x])))
-        return len(partialGuestList)==len(skippedGuestList)
+                                                lambda x: tuple([_toPyObject(elem)
+                                                                 for elem in x])))
+        return len(partialGuestList) == len(skippedGuestList)
 
 
-class ComboDelegate(QtGui.QItemDelegate):
+class ComboDelegateColumn2(QtGui.QItemDelegate):
     def __init__(self, parent):
+        QtGui.QItemDelegate.__init__(self, parent)
         self.pathIcons = map(lambda path: QtGui.QIcon(path),
                              ['images/male.png', 'images/female.png', 'images/baby.png'])
-        QtGui.QItemDelegate.__init__(self, parent)
+
 
     def createEditor(self, parent, option, index):
         combo = QtGui.QComboBox(parent)
@@ -142,11 +146,32 @@ class ComboDelegate(QtGui.QItemDelegate):
         self.commitData.emit(self.sender())
 
 
+class ButtonDelegateColumn3(QtGui.QItemDelegate):
+    def __init__(self, parent):
+        QtGui.QItemDelegate.__init__(self, parent)
+        self.tagList = ['']
+
+    def createEditor(self, parent, option, index):
+        button = QtGui.QPushButton(parent)
+        button.setText(QtCore.QString(u"Tags..."))
+
+        # self.connect(button, QtCore.SIGNAL("currentIndexChanged(int)"),
+        #             self, QtCore.SLOT("currentIndexChanged()"))
+        button.clicked.connect(self.raiseUI)
+        return button
+
+    def raiseUI(self):
+        print "Raise the UI !"
+
+
+
+
 class GuestsView(QtGui.QTableView):
     def __init__(self, parent=None):
         super(GuestsView, self).__init__(parent)
         # Delegate for gender
-        self.setItemDelegateForColumn(2, ComboDelegate(self))
+        self.setItemDelegateForColumn(2, ComboDelegateColumn2(self))
+        self.setItemDelegateForColumn(3, ButtonDelegateColumn3(self))
 
 
 class Widget(QtGui.QWidget):
@@ -154,6 +179,7 @@ class Widget(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
         # Setting the model/view and linking the two.
         self.model = GuestsModel()
+        self.tagModel = QtGui.QStringListModel()
         self.view = GuestsView()
         self.view.setModel(self.model)
         self.view.setSelectionMode(
@@ -171,9 +197,12 @@ class Widget(QtGui.QWidget):
         self.gStackBar.addItem(55, 'Export\nguests',
                                'images/export.png', False,
                                'Export a list of guest to a file')
+        self.gStackBar.addItem(55, 'Manage tags', 'images/iconTags', False,
+                               'Manage tags')
         # Setting function ton the stackbar buttons
         self.gStackBar.setFunction(0, self.addGuest)
         self.gStackBar.setFunction(1, self.delGuest)
+        self.gStackBar.setFunction(4, self.manageTags)
         # Creating the vertical layout
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.gStackBar)
@@ -187,6 +216,8 @@ class Widget(QtGui.QWidget):
         self.model.insertRows(self.model.rowCount(), 1)
         self.view.openPersistentEditor(
                 self.model.index(self.model.rowCount() - 1, 2))
+        self.view.openPersistentEditor(
+                self.model.index(self.model.rowCount() - 1, 3))
 
     def delGuest(self):
         print "Deleting a list of selected rows"
@@ -195,6 +226,12 @@ class Widget(QtGui.QWidget):
                                            for item in selection.selectedIndexes()])))
         for row in l:
             self.model.removeRows(row, 1)
+
+    def manageTags(self):
+        tagWindow = TagWindow()
+        self.connect(tagWindow, QtCore.SIGNAL("closingTagWindow(PyQt_PyObject)"))
+        tagWindow.setWindowModality(QtCore.Qt.ApplicationModal)
+        tagWindow.show()
 
 
 # MAIN -------------------------------------------------------------------------
