@@ -44,7 +44,8 @@ class StackBar(QtGui.QWidget):
     def addItem(self, width, text, icon, txtOnIcon=False, tooltip=''):
         self.currentItem = len(self.btnList)
         self.currentx = self.currentItem * self.btnGap + sum([i.size().width()
-                                                              for i in self.btnList])
+                                                              for i in
+                                                              self.btnList])
         if txtOnIcon:
             txt = text
         else:
